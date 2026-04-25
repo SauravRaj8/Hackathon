@@ -1,0 +1,181 @@
+{
+  "projectName": "DigiHaat",
+  "basePath": "/",
+  "endpoints": [
+    {
+      "category": "Catalogue Management",
+      "name": "Ingest Catalogue",
+      "method": "POST",
+      "path": "/catalogue/ingest",
+      "contentType": "multipart/form-data",
+      "description": "Upload a CSV file to ingest products into the background processing queue.",
+      "request": {
+        "body": {
+          "file": {
+            "type": "file",
+            "required": true,
+            "description": "CSV file with mandatory 'image_url' column."
+          }
+        }
+      },
+      "response": {
+        "status": 202,
+        "body": {
+          "message": "string",
+          "total": "number",
+          "queued": "number",
+          "qualityThreshold": "number",
+          "pendingEndpoint": "string"
+        }
+      }
+    },
+    {
+      "category": "Catalogue Management",
+      "name": "Get Pending Items",
+      "method": "GET",
+      "path": "/catalogue/pending",
+      "description": "Retrieve items that failed quality scoring for manual review.",
+      "request": {
+        "queryParams": {
+          "status": { "type": "string", "default": "pending", "options": ["pending", "approved", "rejected"] },
+          "page": { "type": "number", "default": 1 },
+          "limit": { "type": "number", "default": 20, "max": 100 },
+          "minScore": { "type": "number", "required": false },
+          "maxScore": { "type": "number", "required": false }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "total": "number",
+          "page": "number",
+          "limit": "number",
+          "pages": "number",
+          "items": "array"
+        }
+      }
+    },
+    {
+      "category": "Catalogue Management",
+      "name": "Update Pending Item",
+      "method": "PATCH",
+      "path": "/catalogue/pending/:id",
+      "contentType": "application/json",
+      "description": "Manually edit attributes of a pending item.",
+      "request": {
+        "params": { "id": "string" },
+        "body": {
+          "title": "string",
+          "providedBrand": "string",
+          "providedColour": "string",
+          "providedCategory": "string",
+          "providedTags": "array",
+          "aiExtracted": "object"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "message": "string",
+          "item": "object"
+        }
+      }
+    },
+    {
+      "category": "Catalogue Management",
+      "name": "Approve Pending Item",
+      "method": "POST",
+      "path": "/catalogue/pending/:id/approve",
+      "contentType": "application/json",
+      "description": "Approve and index a pending item.",
+      "request": {
+        "params": { "id": "string" },
+        "body": {
+          "reviewedBy": { "type": "string", "required": false }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "message": "string",
+          "productId": "string",
+          "pendingId": "string",
+          "product": "object"
+        }
+      }
+    },
+    {
+      "category": "Catalogue Management",
+      "name": "Reject Pending Item",
+      "method": "POST",
+      "path": "/catalogue/pending/:id/reject",
+      "contentType": "application/json",
+      "description": "Reject a pending item with a reason.",
+      "request": {
+        "params": { "id": "string" },
+        "body": {
+          "reason": "string",
+          "reviewedBy": "string"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "message": "string",
+          "pendingId": "string"
+        }
+      }
+    },
+    {
+      "category": "Search",
+      "name": "Unified Search",
+      "method": "POST",
+      "path": "/search",
+      "contentType": "multipart/form-data",
+      "description": "Multi-modal search using text and/or image.",
+      "request": {
+        "body": {
+          "query": { "type": "string", "required": false, "description": "Text search query" },
+          "image": { "type": "file", "required": false, "description": "Product image" },
+          "element": { "type": "number", "required": false, "description": "Index of detected product in image" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "searchSource": "string",
+          "multiElement": "boolean",
+          "elements": "array",
+          "selectedElement": "object",
+          "results": "array"
+        }
+      }
+    },
+    {
+      "category": "Miscellaneous",
+      "name": "Health Check",
+      "method": "GET",
+      "path": "/health",
+      "description": "Service health check.",
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "string",
+          "services": "object",
+          "timestamp": "string"
+        }
+      }
+    },
+    {
+      "category": "Miscellaneous",
+      "name": "Dashboard",
+      "method": "GET",
+      "path": "/dashboard",
+      "description": "HTML dashboard for reviewing items.",
+      "response": {
+        "status": 200,
+        "contentType": "text/html"
+      }
+    }
+  ]
+}

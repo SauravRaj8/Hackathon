@@ -1,0 +1,5 @@
+[MongoDB] Connected: localhost
+[Elasticsearch] Index 'catalogue_products' already exists
+🚀 [Worker] Catalogue ingest worker started — waiting for jobs...
+   Quality threshold: 0.75
+   Concurrency: 3 jobs

@@ -1,0 +1,4 @@
+Error occurred during initialization of VM
+java.lang.Error: A command line option has attempted to allow or enable the Security Manager. Enabling a Security Manager is not supported.
+	at java.lang.System.initPhase3(java.base@25.0.2/System.java:1969)
+

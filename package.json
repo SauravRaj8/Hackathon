@@ -1,0 +1,28 @@
+{
+  "name": "catalogue-search-engine",
+  "version": "1.0.0",
+  "description": "AI-powered catalogue ingestion and visual product search engine",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "worker": "node src/workers/ingestWorker.js",
+    "start:all": "node src/app.js & node src/workers/ingestWorker.js"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^7.17.14",
+    "@google/generative-ai": "^0.21.0",
+    "@xenova/transformers": "^2.17.2",
+    "axios": "^1.7.2",
+    "bullmq": "^5.7.0",
+    "csv-parse": "^5.5.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "ioredis": "^5.3.2",
+    "mongoose": "^8.3.0",
+    "multer": "^2.1.1",
+    "sharp": "^0.34.5",
+    "uuid": "^9.0.1"
+  }
+}

@@ -1,0 +1,16 @@
+[MongoDB] Connected: localhost
+[Elasticsearch] Status: green
+[Elasticsearch] Index 'catalogue_products' already exists
+
+🚀 Server running at http://localhost:3000
+
+  Endpoints:
+  ─────────────────────────────────────────────────────
+  POST   /catalogue/ingest    Upload CSV to ingest products
+  GET    /catalogue/pending   View items pending quality review
+  POST   /search              Image or text product search
+  GET    /health              Service health check
+  ─────────────────────────────────────────────────────
+
+  ⚠️  Run worker separately: node src/workers/ingestWorker.js
+

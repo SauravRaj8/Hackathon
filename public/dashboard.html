@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catalogue Review Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card: #181c23;
+      --border: #272d38;
+      --text: #e6e8ee;
+      --muted: #8a94a6;
+      --accent: #4f8cff;
+      --good: #3ecf7a;
+      --bad: #ff6b6b;
+      --warn: #f7b955;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #12151c;
+      position: sticky; top: 0; z-index: 10;
+    }
+    header h1 { margin: 0; font-size: 1.2rem; font-weight: 600; }
+    .controls { display: flex; gap: 0.5rem; align-items: center; }
+    select, button, input {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+    button { cursor: pointer; }
+    button:hover { border-color: var(--accent); }
+    button.approve { background: var(--good); color: #0b1a12; border-color: var(--good); font-weight: 600; }
+    button.reject { background: var(--bad); color: #1a0b0b; border-color: var(--bad); font-weight: 600; }
+    button.edit { background: var(--warn); color: #1a140b; border-color: var(--warn); font-weight: 600; }
+    .container { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+    .summary { color: var(--muted); margin-bottom: 1rem; font-size: 0.875rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-image {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #0a0c10;
+      object-fit: contain;
+    }
+    .card-body { padding: 0.9rem; }
+    .title { font-weight: 600; margin-bottom: 0.25rem; }
+    .muted { color: var(--muted); font-size: 0.8rem; }
+    .score {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+    }
+    .score.low { background: #3a1111; color: var(--bad); }
+    .score.mid { background: #3a2a11; color: var(--warn); }
+    .score.high { background: #11331f; color: var(--good); }
+    .fields {
+      display: grid;
+      grid-template-columns: auto 1fr 1fr;
+      gap: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      margin: 0.5rem 0;
+      align-items: start;
+    }
+    .fields .label { color: var(--muted); }
+    .fields .provided { color: #a6cfff; }
+    .fields .ai { color: #ffcf8a; }
+    .fields .row-mismatch .provided,
+    .fields .row-mismatch .ai { color: var(--bad); }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+    .tag {
+      background: #202732;
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+    .failed-fields { margin-top: 0.5rem; font-size: 0.75rem; color: var(--bad); }
+    .actions { display: flex; gap: 0.4rem; padding: 0.75rem 0.9rem; border-top: 1px solid var(--border); }
+    .actions button { flex: 1; padding: 0.5rem; font-size: 0.85rem; }
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: 0.875rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.2s;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.ok { border-color: var(--good); }
+    .toast.err { border-color: var(--bad); }
+    .empty {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--muted);
+    }
+    .modal-bg {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-bg.show { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      width: min(520px, 90vw);
+    }
+    .modal h3 { margin: 0 0 0.75rem 0; }
+    .modal label { display: block; font-size: 0.8rem; color: var(--muted); margin: 0.5rem 0 0.25rem; }
+    .modal input, .modal textarea {
+      width: 100%;
+      background: #0f1319;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+    .modal-actions { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛒 Catalogue Review</h1>
+    <div class="controls">
+      <label class="muted">Status:</label>
+      <select id="statusFilter">
+        <option value="pending" selected>Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <button id="refreshBtn">↻ Refresh</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="summary" id="summary">Loading…</div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- Reject modal -->
+  <div class="modal-bg" id="rejectModal">
+    <div class="modal">
+      <h3>Reject item</h3>
+      <label>Reason</label>
+      <textarea id="rejectReason" rows="3" placeholder="Why is this item being rejected?"></textarea>
+      <div class="modal-actions">
+        <button onclick="closeReject()">Cancel</button>
+        <button class="reject" onclick="confirmReject()">Reject</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit modal -->
+  <div class="modal-bg" id="editModal">
+    <div class="modal">
+      <h3>Edit AI-extracted fields</h3>
+      <label>Category</label><input id="edit_category" />
+      <label>Brand</label><input id="edit_brand" />
+      <label>Colour</label><input id="edit_colour" />
+      <label>Tags (comma-separated)</label><input id="edit_tags" />
+      <div class="modal-actions">
+        <button onclick="closeEdit()">Cancel</button>
+        <button class="edit" onclick="saveEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const grid = $('grid');
+    const summary = $('summary');
+    const statusFilter = $('statusFilter');
+    const toast = $('toast');
+
+    let currentRejectId = null;
+    let currentEditId = null;
+
+    const showToast = (msg, type = 'ok') => {
+      toast.textContent = msg;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => { toast.className = 'toast'; }, 2500);
+    };
+
+    const scoreClass = (s) => (s < 0.5 ? 'low' : s < 0.75 ? 'mid' : 'high');
+
+    const diffRow = (label, provided, ai) => {
+      const mismatch = provided && ai && String(provided).toLowerCase() !== String(ai).toLowerCase();
+      return `
+        <div class="label">${label}</div>
+        <div class="provided ${mismatch ? 'row-mismatch' : ''}">${provided ?? '—'}</div>
+        <div class="ai ${mismatch ? 'row-mismatch' : ''}">${ai ?? '—'}</div>
+      `;
+    };
+
+    const renderCard = (item) => {
+      const s = item.qualityScore ?? 0;
+      const ai = item.aiExtracted || {};
+      const tagList = (ai.tags || []).slice(0, 6).map(t => `<span class="tag">${t}</span>`).join('');
+      const failed = (item.failedFields || []).join(', ');
+      const canAct = item.status === 'pending';
+
+      return `
+        <div class="card" data-id="${item._id}">
+          <img class="card-image" src="${item.imageUrl}" loading="lazy" alt="" onerror="this.style.opacity=0.2" />
+          <div class="card-body">
+            <div class="title">${item.title || '(no title)'} ${item.sku ? `<span class="muted">· ${item.sku}</span>` : ''}</div>
+            <span class="score ${scoreClass(s)}">score ${s.toFixed(3)}</span>
+            <div class="fields">
+              <div></div><div class="muted">provided</div><div class="muted">AI</div>
+              ${diffRow('category', item.providedCategory, ai.category)}
+              ${diffRow('brand', item.providedBrand, ai.brand)}
+              ${diffRow('colour', item.providedColour, ai.colour)}
+            </div>
+            <div class="tags">${tagList}</div>
+            ${failed ? `<div class="failed-fields">Failed fields: ${failed}</div>` : ''}
+          </div>
+          ${canAct ? `
+          <div class="actions">
+            <button class="edit" onclick="openEdit('${item._id}')">Edit</button>
+            <button class="reject" onclick="openReject('${item._id}')">Reject</button>
+            <button class="approve" onclick="approve('${item._id}')">Approve</button>
+          </div>` : `
+          <div class="actions">
+            <span class="muted" style="flex:1;text-align:center;padding:0.5rem">
+              ${item.status} ${item.reviewedAt ? '· ' + new Date(item.reviewedAt).toLocaleString() : ''}
+            </span>
+          </div>`}
+        </div>
+      `;
+    };
+
+    const load = async () => {
+      const status = statusFilter.value;
+      summary.textContent = 'Loading…';
+      try {
+        const r = await fetch(`http://localhost:3000/catalogue/pending?status=${status}&limit=50`);
+        const data = await r.json();
+        summary.textContent = `${data.total} ${status} items  ·  page ${data.page} / ${data.pages}`;
+        grid.innerHTML = data.items.length
+          ? data.items.map(renderCard).join('')
+          : `<div class="empty">No ${status} items.</div>`;
+      } catch (e) {
+        summary.textContent = 'Failed to load.';
+        showToast(e.message, 'err');
+      }
+    };
+
+    const approve = async (id) => {
+      try {
+        const r = await fetch(`/catalogue/pending/${id}/approve`, { method: 'POST' });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Approve failed');
+        showToast(`Approved & indexed — product ${data.productId.slice(0, 8)}…`, 'ok');
+        document.querySelector(`[data-id="${id}"]`)?.remove();
+      } catch (e) { showToast(e.message, 'err'); }
+    };
+
+    const openReject = (id) => { currentRejectId = id; $('rejectModal').classList.add('show'); };
+    const closeReject = () => { currentRejectId = null; $('rejectReason').value = ''; $('rejectModal').classList.remove('show'); };
+
+    const confirmReject = async () => {
+      if (!currentRejectId) return;
+      try {
+        const r = await fetch(`/catalogue/pending/${currentRejectId}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: $('rejectReason').value || 'Rejected via dashboard' }),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Reject failed');
+        showToast('Rejected', 'ok');
+        document.querySelector(`[data-id="${currentRejectId}"]`)?.remove();
+        closeReject();
+      } catch (e) { showToast(e.message, 'err'); closeReject(); }
+    };
+
+    const openEdit = async (id) => {
+      currentEditId = id;
+      const card = document.querySelector(`[data-id="${id}"]`);
+      // Prefill by re-reading current data from the rendered card
+      const r = await fetch(`/catalogue/pending?status=pending&limit=200`);
+      const data = await r.json();
+      const item = data.items.find(i => i._id === id);
+      const ai = (item && item.aiExtracted) || {};
+      $('edit_category').value = ai.category || '';
+      $('edit_brand').value = ai.brand || '';
+      $('edit_colour').value = ai.colour || '';
+      $('edit_tags').value = (ai.tags || []).join(', ');
+      $('editModal').classList.add('show');
+    };
+    const closeEdit = () => { currentEditId = null; $('editModal').classList.remove('show'); };
+
+    const saveEdit = async () => {
+      if (!currentEditId) return;
+      try {
+        const body = {
+          aiExtracted: {
+            category: $('edit_category').value || null,
+            brand: $('edit_brand').value || null,
+            colour: $('edit_colour').value || null,
+            tags: $('edit_tags').value.split(',').map(s => s.trim()).filter(Boolean),
+          },
+        };
+        const r = await fetch(`/catalogue/pending/${currentEditId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Edit failed');
+        showToast('Saved', 'ok');
+        closeEdit();
+        load();
+      } catch (e) { showToast(e.message, 'err'); closeEdit(); }
+    };
+
+    $('refreshBtn').addEventListener('click', load);
+    statusFilter.addEventListener('change', load);
+    load();
+  </script>
+</body>
+</html>
